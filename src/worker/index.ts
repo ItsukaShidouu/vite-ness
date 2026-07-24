@@ -1,13 +1,6 @@
-import { Hono } from "hono";
+import { app } from "./app";
 
-// Hapus atau sesuaikan <{ Bindings: Env }> jika Env belum didefinisikan
-const app = new Hono<{ Bindings: Env }>();
-
-app.get("/api/", (c) => {
-  return c.json({
-    message: "not found babe<3",
-    backend: "ness cibaduyut"
-  });
-});
+export { TodoStore } from "./durable-objects/todo-store";
+export { app };
 
 export default app;

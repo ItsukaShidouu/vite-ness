@@ -1,90 +1,145 @@
-# React + Vite + Hono + Cloudflare Workers
+# vite-ness API
 
-[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/cloudflare/templates/tree/main/vite-react-template)
+Backend REST API yang berjalan di Cloudflare Workers. Project ini menggunakan
+[Hono](https://hono.dev/) untuk pola routing dan middleware yang mirip Express,
+tetapi tetap memakai API native Cloudflare Workers—tidak ada `app.listen()` atau
+server Node.js yang harus dipelihara.
 
-This template provides a minimal setup for building a React application with TypeScript and Vite, designed to run on Cloudflare Workers. It features hot module replacement, ESLint integration, and the flexibility of Workers deployments.
+Resource contoh `todos` sudah memiliki CRUD persisten melalui SQLite-backed
+Durable Object. Tidak diperlukan `database_id` atau layanan database eksternal
+untuk menjalankannya.
 
-![React + TypeScript + Vite + Cloudflare Workers](https://imagedelivery.net/wSMYJvS3Xw-n339CbDyDIA/fc7b4b62-442b-4769-641b-ad4422d74300/public)
+## Arsitektur
 
-<!-- dash-content-start -->
-
-🚀 Supercharge your web development with this powerful stack:
-
-- [**React**](https://react.dev/) - A modern UI library for building interactive interfaces
-- [**Vite**](https://vite.dev/) - Lightning-fast build tooling and development server
-- [**Hono**](https://hono.dev/) - Ultralight, modern backend framework
-- [**Cloudflare Workers**](https://developers.cloudflare.com/workers/) - Edge computing platform for global deployment
-
-### ✨ Key Features
-
-- 🔥 Hot Module Replacement (HMR) for rapid development
-- 📦 TypeScript support out of the box
-- 🛠️ ESLint configuration included
-- ⚡ Zero-config deployment to Cloudflare's global network
-- 🎯 API routes with Hono's elegant routing
-- 🔄 Full-stack development setup
-- 🔎 Built-in Observability to monitor your Worker
-
-Get started in minutes with local development or deploy directly via the Cloudflare dashboard. Perfect for building modern, performant web applications at the edge.
-
-<!-- dash-content-end -->
-
-## Getting Started
-
-To start a new project with this template, run:
-
-```bash
-npm create cloudflare@latest -- --template=cloudflare/templates/vite-react-template
+```text
+Browser / API client
+        |
+        v
+Hono Worker: CORS, request ID, error handler, optional API key
+        |
+        v
+TodoStore Durable Object: SQLite dan CRUD todos
 ```
 
-A live deployment of this template is available at:
-[https://react-vite-template.templates.workers.dev](https://react-vite-template.templates.workers.dev)
+`TodoStore` menggunakan satu instance bernama `default`, sehingga semua operasi
+CRUD konsisten dan data tetap tersimpan setelah Worker restart. Saat aplikasi
+sudah memiliki tenant atau pengguna, ubah nama instance di `src/worker/app.ts`
+agar di-shard berdasarkan tenant/user.
 
-## Development
-
-Install dependencies:
+## Menjalankan lokal
 
 ```bash
 npm install
-```
-
-Start the development server with:
-
-```bash
+npm run cf-typegen
 npm run dev
 ```
 
-Your application will be available at [http://localhost:5173](http://localhost:5173).
-
-## Production
-
-Build your project for production:
+Wrangler akan menampilkan URL lokal, biasanya `http://localhost:8787`.
 
 ```bash
-npm run build
+curl http://localhost:8787/api/v1/health
+
+curl -X POST http://localhost:8787/api/v1/todos \
+  -H 'Content-Type: application/json' \
+  -d '{"title":"Deploy API ke Workers","description":"Coba CRUD lokal"}'
+
+curl 'http://localhost:8787/api/v1/todos?completed=false&limit=20'
 ```
 
-Preview your build locally:
+## Endpoint
+
+| Method | Path | Keterangan |
+| --- | --- | --- |
+| `GET` | `/` | Metadata service singkat |
+| `GET` | `/api/v1` | Daftar resource API |
+| `GET` | `/api/v1/health` | Health check |
+| `GET` | `/api/v1/todos?page=1&limit=20&completed=false` | Daftar todo dengan pagination/filter |
+| `POST` | `/api/v1/todos` | Buat todo |
+| `GET` | `/api/v1/todos/:id` | Ambil satu todo |
+| `PATCH` | `/api/v1/todos/:id` | Ubah todo |
+| `DELETE` | `/api/v1/todos/:id` | Hapus todo (`204`) |
+
+Contoh body untuk membuat todo:
+
+```json
+{
+  "title": "Deploy API ke Workers",
+  "description": "Opsional; maksimal 2000 karakter",
+  "completed": false
+}
+```
+
+Contoh respons sukses:
+
+```json
+{
+  "data": {
+    "id": "b94860d7-e9ee-4d2d-ac4c-e12aa9a9d5df",
+    "title": "Deploy API ke Workers",
+    "description": null,
+    "completed": false,
+    "createdAt": "2026-07-24T00:00:00.000Z",
+    "updatedAt": "2026-07-24T00:00:00.000Z"
+  },
+  "meta": {
+    "requestId": "..."
+  }
+}
+```
+
+Semua error menggunakan bentuk berikut:
+
+```json
+{
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "title tidak boleh kosong."
+  },
+  "meta": {
+    "requestId": "..."
+  }
+}
+```
+
+## Konfigurasi produksi
+
+`wrangler.json` sudah mendaftarkan binding `TODO_STORE` dan migrasi Durable
+Object SQLite. Cloudflare akan menyiapkan namespace-nya saat deploy pertama.
+
+`CORS_ORIGIN` secara default bernilai `*`. Untuk production, ganti nilainya
+menjadi origin frontend yang diizinkan, misalnya:
+
+```json
+"vars": {
+  "CORS_ORIGIN": "https://app.example.com,https://admin.example.com"
+}
+```
+
+Autentikasi API key bersifat opsional. Setelah secret ini dibuat, seluruh route
+`/api/v1/todos` wajib menyertakan `Authorization: Bearer <nilai-secret>`:
 
 ```bash
-npm run preview
+npx wrangler secret put API_KEY
 ```
 
-Deploy your project to Cloudflare Workers:
+Health check dan metadata API tetap terbuka agar bisa dipakai monitoring.
+
+## Perintah
 
 ```bash
-npm run build && npm run deploy
+npm run dev         # Worker lokal dengan hot reload
+npm run typecheck   # Validasi TypeScript
+npm run lint        # Lint source Worker
+npm run build       # Typecheck + validasi bundle/deploy tanpa mengunggah
+npm run check       # Lint + build
+npm run deploy      # Deploy ke Cloudflare Workers
 ```
 
-Monitor your workers:
+Sebelum deploy pertama, autentikasi ke akun Cloudflare Anda lalu jalankan:
 
 ```bash
-npx wrangler tail
+npx wrangler login
+npm run cf-typegen
+npm run check
+npm run deploy
 ```
-
-## Additional Resources
-
-- [Cloudflare Workers Documentation](https://developers.cloudflare.com/workers/)
-- [Vite Documentation](https://vitejs.dev/guide/)
-- [React Documentation](https://reactjs.org/)
-- [Hono Documentation](https://hono.dev/)
