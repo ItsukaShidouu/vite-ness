@@ -9,5 +9,15 @@
 	"upload_source_maps": true,
 	"vars": {
 		"CORS_ORIGIN": "*"
-	}
+	},
+	"migrations": [
+		{
+			"tag": "v1",
+			"new_sqlite_classes": ["TodoStore"]
+		},
+		{
+			"tag": "v2",
+			"deleted_classes": ["TodoStore"]
+		}
+	]
 }

@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import type { AppEnv } from "../../types";
+import type { AppEnv } from "../types";
 import {
 	downloadTiktok,
 	downloadInstagram,
@@ -18,11 +18,11 @@ import {
 	downloadXiaohongshu,
 	downloadKuaishou,
 	downloadMediafire,
-} from "../../controllers/downloader.controller";
+} from "../controllers/downloader.controller";
 
 export const downloaderRouter = new Hono<AppEnv>();
 
-// Support both GET and POST requests for all downloader endpoints
+// Direct downloader routes (supports both GET and POST)
 downloaderRouter.on(["GET", "POST"], "/tiktok", downloadTiktok);
 downloaderRouter.on(["GET", "POST"], "/instagram", downloadInstagram);
 downloaderRouter.on(["GET", "POST"], "/youtube", downloadYoutube);

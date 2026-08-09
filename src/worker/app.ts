@@ -9,7 +9,7 @@ export const app = new Hono<AppEnv>();
 
 // Global Middlewares
 app.use("*", requestContext);
-app.use("/api/*", apiCors);
+app.use("*", apiCors);
 
 // Routes Assembly
 app.route("/", mainRouter);
@@ -17,4 +17,3 @@ app.route("/", mainRouter);
 // Error Handling
 app.notFound(notFoundHandler);
 app.onError(errorHandler);
-
