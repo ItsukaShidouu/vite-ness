@@ -1,4 +1,3 @@
-import type { Todo } from "../types";
 import { ApiError } from "./api-error";
 
 type ResponseMetadata = Record<string, unknown>;
@@ -62,22 +61,4 @@ export function noContentResponse(requestId: string): Response {
 			"x-request-id": requestId,
 		},
 	});
-}
-
-export function serializeTodo(row: {
-	id: string;
-	title: string;
-	description: string | null;
-	completed: number;
-	created_at: string;
-	updated_at: string;
-}): Todo {
-	return {
-		id: row.id,
-		title: row.title,
-		description: row.description,
-		completed: row.completed === 1,
-		createdAt: row.created_at,
-		updatedAt: row.updated_at,
-	};
 }

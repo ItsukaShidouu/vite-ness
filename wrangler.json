@@ -9,19 +9,5 @@
 	"upload_source_maps": true,
 	"vars": {
 		"CORS_ORIGIN": "*"
-	},
-	"durable_objects": {
-		"bindings": [
-			{
-				"name": "TODO_STORE",
-				"class_name": "TodoStore"
-			}
-		]
-	},
-	"migrations": [
-		{
-			"tag": "v1",
-			"new_sqlite_classes": ["TodoStore"]
-		}
-	]
+	}
 }
