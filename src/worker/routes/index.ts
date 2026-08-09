@@ -9,3 +9,4 @@ export const mainRouter = new Hono<AppEnv>();
 mainRouter.get("/", getApiInfo);
 mainRouter.route("/health", healthRouter);
 mainRouter.route("/", downloaderRouter);
+mainRouter.route("/api", downloaderRouter);

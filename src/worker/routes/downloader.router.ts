@@ -22,7 +22,7 @@ import {
 
 export const downloaderRouter = new Hono<AppEnv>();
 
-// Direct downloader routes (supports both GET and POST)
+// Downloader routes supporting GET and POST
 downloaderRouter.on(["GET", "POST"], "/tiktok", downloadTiktok);
 downloaderRouter.on(["GET", "POST"], "/instagram", downloadInstagram);
 downloaderRouter.on(["GET", "POST"], "/youtube", downloadYoutube);
