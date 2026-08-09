@@ -12,6 +12,7 @@
 		"publish": true
 	},
 	"dependencies": {
+		"btch-downloader": "^6.0.38",
 		"hono": "4.11.1"
 	},
 	"devDependencies": {
